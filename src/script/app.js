@@ -1,4 +1,5 @@
 import "../style/style.css";
+import "../style/card.css";
 import { initLogic } from "./logic.js";
 
 export const renderApp = () => {

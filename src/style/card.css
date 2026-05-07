@@ -1,0 +1,53 @@
+.preview-card{
+
+    background: #1a1d23;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    text-align: left;
+    animation: fadeIn 0.5s ease;
+}
+
+.preview-thumb{
+    width: 120px;
+    height: 68px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.preview-info{
+    flex: 1;
+
+}
+
+.preview-title{
+    font-size: 0.95rem;
+    font-weight: bold;
+    margin: 0 0 5px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.preview-author{
+    font-size: 0.8rem;
+    color: #00eaff;
+}
+
+@keyframes fadeIn {
+
+    from {
+        opacity: 0; 
+        transform: translateY(10px);
+    }
+    to{
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+}
