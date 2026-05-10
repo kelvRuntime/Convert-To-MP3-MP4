@@ -23,3 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 *.env
+# ignore ytdl/player script artifacts
+src/server/*player-script.js

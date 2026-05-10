@@ -1,8 +1,9 @@
 const express = require("express");
 const cors = require("cors");
-const { getVideoInfo } = require("./services/youtube");
 const dotenv = require("dotenv");
-const ytdl = require("@distube/ytdl-core");
+const { getVideoInfo } = require("./services/youtube");
+const { getPlaylistData } = require("./services/playlist");
+const { processDownload } = require("./services/converter");
 
 dotenv.config();
 const app = express();
@@ -11,43 +12,37 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/info", async (req, res) => {
-  const { url } = req.query;
-  if (!url) {
-    return res.status(400).json({ error: "URL is required" });
-  }
+  const { url, offset } = req.query;
+  if (!url) return res.status(400).json({ error: "URL is required" });
 
   try {
+    if (url.includes("list=")) {
+      const data = await getPlaylistData(url, parseInt(offset) || 0);
+      return res.json({ type: "playlist", ...data });
+    }
+
     const data = await getVideoInfo(url);
-    res.json(data);
+
+    res.json({ type: "video", ...data });
   } catch (err) {
-    if (!res.headersSent)
-      res.status(500).json({ error: "Failed to fetch video details" });
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    }
   }
 });
 
 app.get("/download", async (req, res) => {
-  const { url, format } = req.query;
+  const { url, format, itag } = req.query;
 
-  if (!url) return res.status(400).send("URL is required");
+  if (!url) return res.status(400).json({ error: "URL is required" });
+  if (!format) return res.status(400).json({ error: "Format is required" });
 
   try {
-    const info = await ytdl.getInfo(url);
-    const title = info.videoDetails.title.replace(/[^\w\s]/gi, "");
-
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="${title}.${format}"`,
-    );
-
-    //ytdl(url, { filter: format === 'mp3' ? 'audioonly' : 'audioandvideo' }).pipe(res);
-
-    if (format === "mp3") {
-      ytdl(url, { filter: "audioonly", quality: "highestaudio" }).pipe(res);
-    } else {
-      ytdl(url, { quality: "highestvideo" }).pipe(res);
-    }
+    await processDownload(url, format, itag, res);
   } catch (err) {
-    res.status(500).json({ error: "Failed to convert video" });
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    }
     console.error(err);
   }
 });

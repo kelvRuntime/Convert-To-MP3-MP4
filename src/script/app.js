@@ -14,10 +14,6 @@ export const renderApp = () => {
     <button  type="button" id="btnColar">Paste</button>
     </div>
 
-    <div class="buttons"> 
-    <button   id="downloadMP3" class="btn-primary"> Convert to MP3</button>
-    <button   id="downloadMP4" class="btn-secondary"> Convert to MP4</button>
-    </div>
 
     <div id="status" class="status-msg"></div>
 

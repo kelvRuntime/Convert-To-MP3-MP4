@@ -4,7 +4,7 @@
   --accent: #00eaff;
   --text-main:#ffffff;
   --text-dim: #8b949e;
-  --front-family: 'inter', system-ui, -apple-system, sans-serif;
+  --font-family: 'inter', system-ui, -apple-system, sans-serif;
 }
 
 
@@ -16,7 +16,7 @@ body {
   align-items: center;
   height: 100vh;
   color: var(--text-main);
-  font-family: var(--front-family);
+  font-family: var(--font-family);
 }
 
 #container {
@@ -82,14 +82,10 @@ input:focus{
   font-size: 0.8rem;
   font-weight: 600;
 }
-.btnColar:hover {
+#btnColar:hover {
   background: #30363d;
 }
-.buttons {
-  display: flex;
-  gap: 12px;
-  
-}
+
  button{
   flex: 1;
   padding: 14px;
@@ -101,15 +97,7 @@ input:focus{
   border: none;
 
 }
-.btn-primary{
-  background:  var(--accent);
-  color: #000;
-}
-.btn-secondary{
-  background: transparent;
-  border: 1.5px solid var(--accent);
-  color: var(--accent);
-}
+
 
 button:hover {
  filter: brightness(1.1);
