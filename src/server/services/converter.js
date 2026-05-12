@@ -1,99 +1,38 @@
-const ytdl = require("@distube/ytdl-core");
-const { formatFileName } = require("../utils/formatter");
 
-const processDownload = async (url, format, itag, res) => {
-  try {
-    let info = null;
-    try {
-      info = await ytdl.getInfo(url);
-    } catch (e) {
-      console.warn(
-        "ytdl.getInfo failed, proceeding where possible:",
-        e.message || e,
-      );
-    }
+const {spawn} = require('child_process');
+const {YTDLP_PATH} = require('./youtube');
+const { formatFileName } = require('../utils/formatter');
 
-    const rawTitle =
-      info && info.videoDetails && info.videoDetails.title
-        ? info.videoDetails.title
-        : "download";
-    const cleanTitle = formatFileName(rawTitle);
+const processDownload = async (url, format, itag, res, title) => {
+      
+    const cleanTitle = formatFileName(title || 'media');
 
-    // create stream so we can attach error handlers before piping
-    let stream;
-    if (format === "mp3") {
-      // allow audio-only downloads even if getInfo failed
-      stream = ytdl(url, { filter: "audioonly", quality: "highestaudio" });
-    } else {
-      // mp4 requires a valid itag; try to pick one from info if not provided
-      let chosenItag = itag;
-      if (!chosenItag && info && Array.isArray(info.formats)) {
-        const videoFmt =
-          info.formats.find((f) => f.hasVideo && f.hasAudio) ||
-          info.formats.find((f) => f.hasVideo);
-        if (videoFmt) chosenItag = videoFmt.itag;
-      }
+     const args = format === 'mp3' ? [
+        '-x', '--audio-format', 'mp3', '--audio-quality', '0',
+        '--embed-thumbnail', 
+        '--force-ipv4', '--socket-timeout', '30',
+        '-o', '-', url
+      ] 
+    : [
+        '-f', `${itag}+bestaudio/best`, 
+        '--force-ipv4', '--socket-timeout', '30',
+        '-o', '-', url
+      ];
+     const ls = spawn(YTDLP_PATH, args);
 
-      if (!chosenItag) {
-        if (!res.headersSent) {
-          res
-            .status(400)
-            .json({
-              error: "MP4 download requires selecting a video quality (itag)",
-            });
-        }
-        return;
-      }
+      res.setHeader('Content-Disposition', `attachment; filename="${cleanTitle}.${format}"`);
+     res.setHeader('Content-Type',  format ==='mp3' ? 'audio/mpeg' :
+       'video/mp4');
 
-      stream = ytdl(url, { quality: chosenItag });
-    }
+       ls.stdout.pipe(res);
 
-    let headersSet = false;
+       ls.stderr.on('data', (data) => {
+        console.log(`[yt-dlp log]: ${data}`);
+       });
 
-    stream.on("error", (err) => {
-      console.error("Stream error:", err);
-      try {
-        if (!res.headersSent) {
-          res.status(500).json({ error: "Stream error: " + err.message });
-        } else {
-          res.end();
-        }
-      } catch (e) {
-        console.error("Error sending stream error response:", e);
-      }
-    });
-
-    // set headers and pipe only after we receive stream info/response
-    const setHeadersAndPipe = () => {
-      if (headersSet) return;
-      headersSet = true;
-      try {
-        if (!res.headersSent) {
-          res.setHeader(
-            "Content-Disposition",
-            `attachment; filename="${cleanTitle}.${format}"`,
-          );
-        }
-      } catch (e) {
-        console.error("Failed to set headers:", e);
-      }
-      stream.pipe(res);
-    };
-
-    stream.once("info", setHeadersAndPipe);
-    stream.once("response", setHeadersAndPipe);
-  } catch (err) {
-    if (!res.headersSent) {
-      res
-        .status(500)
-        .json({
-          error:
-            "Failed to convert video: " +
-            (err && err.message ? err.message : String(err)),
-        });
-    }
-    console.error(err);
-  }
+       ls.on('close', (code) => {
+        if (code !==0) console.error(`yt-dlp process exited with code ${code}`);
+       });
 };
 
 module.exports = {

@@ -32,13 +32,13 @@ app.get("/info", async (req, res) => {
 });
 
 app.get("/download", async (req, res) => {
-  const { url, format, itag } = req.query;
+  const { url, format, itag, title } = req.query;
 
   if (!url) return res.status(400).json({ error: "URL is required" });
   if (!format) return res.status(400).json({ error: "Format is required" });
 
   try {
-    await processDownload(url, format, itag, res);
+    await processDownload(url, format, itag, res, title);
   } catch (err) {
     if (!res.headersSent) {
       res.status(500).json({ error: err.message });
@@ -47,5 +47,5 @@ app.get("/download", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 app.listen(PORT, () => console.log(`🚀Server running on port ${PORT}`));
