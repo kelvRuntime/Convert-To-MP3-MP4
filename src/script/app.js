@@ -6,8 +6,8 @@ export const renderApp = () => {
   document.querySelector("#app").innerHTML = `
     <section id="container">
 
-    <h1 class="logo"> Media <span> API </span></h1>
-    <p class="subtitle"> Software by KelvRunTime</p>
+    <h1 class="logo">Media <span>API</span></h1>
+    <p class="subtitle">Software by KelvRunTime</p>
 
     <div class="input-wrapper">
     <input type="text" id="videoUrl" placeholder="www.youtube.com/watch?v=..."/>
@@ -21,5 +21,13 @@ export const renderApp = () => {
     `;
 };
 
-renderApp();
-initLogic();
+function mountApp() {
+  renderApp();
+  initLogic();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", mountApp);
+} else {
+  mountApp();
+}

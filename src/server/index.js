@@ -1,51 +1,29 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const dotenv = require("dotenv");
-const { getVideoInfo } = require("./services/youtube");
-const { getPlaylistData } = require("./services/playlist");
-const { processDownload } = require("./services/converter");
+const { sweepStaleDownloads } = require("./utils/cleaner");
+const infoRouter = require("./routes/info");
+const downloadRouter = require("./routes/download");
 
 dotenv.config();
+
 const app = express();
+const distPath = path.join(__dirname, "../../dist");
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(distPath));
 
-app.get("/info", async (req, res) => {
-  const { url, offset } = req.query;
-  if (!url) return res.status(400).json({ error: "URL is required" });
+sweepStaleDownloads();
+setInterval(sweepStaleDownloads, 30 * 60 * 1000);
 
-  try {
-    if (url.includes("list=")) {
-      const data = await getPlaylistData(url, parseInt(offset) || 0);
-      return res.json({ type: "playlist", ...data });
-    }
+app.use("/info", infoRouter);
+app.use("/download", downloadRouter);
 
-    const data = await getVideoInfo(url);
-
-    res.json({ type: "video", ...data });
-  } catch (err) {
-    if (!res.headersSent) {
-      res.status(500).json({ error: err.message });
-    }
-  }
+app.use((req, res) => {
+  res.sendFile(path.join(distPath, "index.html"));
 });
 
-app.get("/download", async (req, res) => {
-  const { url, format, itag, title } = req.query;
-
-  if (!url) return res.status(400).json({ error: "URL is required" });
-  if (!format) return res.status(400).json({ error: "Format is required" });
-
-  try {
-    await processDownload(url, format, itag, res, title);
-  } catch (err) {
-    if (!res.headersSent) {
-      res.status(500).json({ error: err.message });
-    }
-    console.error(err);
-  }
-});
-
-const PORT = process.env.PORT;
-app.listen(PORT, () => console.log(`🚀Server running on port ${PORT}`));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
